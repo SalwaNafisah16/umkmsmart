@@ -16,7 +16,13 @@ class ForumPostController extends Controller
      */
     public function store(Request $request)
     {
-        $user = auth()->user();
+        // Pastikan user terautentikasi
+        if (!Auth::check()) {
+            return redirect()->route('login')
+                ->with('error', 'Silakan login terlebih dahulu');
+        }
+
+        $user = Auth::user();
 
         $request->validate([
             'content'    => 'required|string|max:5000',
@@ -66,7 +72,13 @@ class ForumPostController extends Controller
      */
     public function destroy(ForumPost $forumPost)
     {
-        abort_if(Auth::id() !== $forumPost->user_id, 403);
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
+
+        if (Auth::id() !== $forumPost->user_id) {
+            abort(403, 'Anda tidak memiliki akses');
+        }
 
         try {
             if ($forumPost->image) {
@@ -91,7 +103,11 @@ class ForumPostController extends Controller
      */
     public function myPosts()
     {
-        $posts = ForumPost::where('user_id', auth()->id())
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
+
+        $posts = ForumPost::where('user_id', Auth::id())
             ->with(['user', 'likes', 'comments', 'saves'])
             ->latest()
             ->get();
@@ -106,7 +122,13 @@ class ForumPostController extends Controller
      */
     public function edit(ForumPost $forumPost)
     {
-        abort_if($forumPost->user_id !== auth()->id(), 403);
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
+
+        if ($forumPost->user_id !== Auth::id()) {
+            abort(403, 'Anda tidak memiliki akses');
+        }
 
         return view('forum.edit', compact('forumPost'));
     }
@@ -118,7 +140,13 @@ class ForumPostController extends Controller
      */
     public function update(Request $request, ForumPost $forumPost)
     {
-        abort_if($forumPost->user_id !== auth()->id(), 403);
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
+
+        if ($forumPost->user_id !== Auth::id()) {
+            abort(403, 'Anda tidak memiliki akses');
+        }
 
         $request->validate([
             'content' => 'required|string|max:5000',
@@ -138,6 +166,9 @@ class ForumPostController extends Controller
             return back()
                 ->withInput()
                 ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+}
         }
     }
 }

@@ -15,6 +15,10 @@ class ProductController extends Controller
      */
     public function index()
     {
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
+
         $products = Product::where('user_id', Auth::id())
             ->latest()
             ->get();
@@ -27,6 +31,10 @@ class ProductController extends Controller
      */
     public function create()
     {
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
+
         return view('dashboard.umkm.products.create');
     }
 
@@ -35,6 +43,11 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
+        if (!Auth::check()) {
+            return redirect()->route('login')
+                ->with('error', 'Silakan login terlebih dahulu');
+        }
+
         $request->validate([
             'nama_produk' => 'required|string|max:255',
             'deskripsi'   => 'required|string',
@@ -90,7 +103,13 @@ class ProductController extends Controller
      */
     public function edit(Product $product)
     {
-        abort_if($product->user_id !== Auth::id(), 403);
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
+
+        if ($product->user_id !== Auth::id()) {
+            abort(403, 'Anda tidak memiliki akses');
+        }
 
         return view('dashboard.umkm.products.edit', compact('product'));
     }
@@ -100,7 +119,13 @@ class ProductController extends Controller
      */
     public function update(Request $request, Product $product)
     {
-        abort_if($product->user_id !== Auth::id(), 403);
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
+
+        if ($product->user_id !== Auth::id()) {
+            abort(403, 'Anda tidak memiliki akses');
+        }
 
         $request->validate([
             'nama_produk' => 'required|string|max:255',
@@ -142,7 +167,13 @@ class ProductController extends Controller
      */
     public function destroy(Product $product)
     {
-        abort_if($product->user_id !== Auth::id(), 403);
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
+
+        if ($product->user_id !== Auth::id()) {
+            abort(403, 'Anda tidak memiliki akses');
+        }
 
         try {
             if ($product->gambar) {
@@ -153,6 +184,16 @@ class ProductController extends Controller
 
             return redirect()
                 ->route('umkm.products.index')
+                ->with('success', 'Produk berhasil dihapus');
+                
+        } catch (\Exception $e) {
+            \Log::error('ProductController@destroy error: ' . $e->getMessage());
+            return redirect()
+                ->back()
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+}
                 ->with('success', 'Produk berhasil dihapus');
                 
         } catch (\Exception $e) {

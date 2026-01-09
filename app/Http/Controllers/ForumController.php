@@ -1,32 +1,37 @@
 <?php
 
 namespace App\Http\Controllers;
+
 use App\Models\ForumPost;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\RedirectResponse;
 
-
 class ForumController extends Controller
 {
+    public function show(\App\Models\ForumPost $forumPost)
+    {
+        // Ambil KOMENTAR UTAMA saja (parent_id = null)
+        // + eager loading user & replies
+        $comments = $forumPost->comments()
+            ->whereNull('parent_id')
+            ->with(['user', 'replies.user'])
+            ->latest()
+            ->get();
 
-public function show(\App\Models\ForumPost $forumPost)
-{
-    // Ambil KOMENTAR UTAMA saja (parent_id = null)
-    // + eager loading user & replies
-    $comments = $forumPost->comments()
-        ->whereNull('parent_id')
-        ->with(['user', 'replies.user'])
-        ->latest()
-        ->get();
+        return view('forum.show', compact('forumPost', 'comments'));
+    }
 
-    return view('forum.show', compact('forumPost', 'comments'));
-}
     /**
      * Simpan postingan Mahasiswa (TANPA GAMBAR)
      */
     public function storeMahasiswa(Request $request): RedirectResponse
     {
+        if (!Auth::check()) {
+            return redirect()->route('login')
+                ->with('error', 'Silakan login terlebih dahulu');
+        }
+
         $request->validate([
             'content' => 'required|string',
         ]);
@@ -54,6 +59,11 @@ public function show(\App\Models\ForumPost $forumPost)
      */
     public function storeUmkm(Request $request): RedirectResponse
     {
+        if (!Auth::check()) {
+            return redirect()->route('login')
+                ->with('error', 'Silakan login terlebih dahulu');
+        }
+
         $request->validate([
             'title'   => 'required|string',
             'content' => 'required|string',
@@ -83,14 +93,20 @@ public function show(\App\Models\ForumPost $forumPost)
                 ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
+
     public function index()
     {
-        $posts = ForumPost::latest()->get();
+        $posts = ForumPost::with(['user', 'likes', 'comments'])
+            ->latest()
+            ->get();
+            
         return view('forum.index', compact('posts'));
     }
+
     public function event()
     {
         $posts = ForumPost::where('type', 'event')
+            ->with(['user', 'likes', 'comments'])
             ->latest()
             ->get();
 
@@ -100,6 +116,7 @@ public function show(\App\Models\ForumPost $forumPost)
     public function promosi()
     {
         $posts = ForumPost::where('type', 'promosi')
+            ->with(['user', 'likes', 'comments'])
             ->latest()
             ->get();
 
@@ -109,10 +126,10 @@ public function show(\App\Models\ForumPost $forumPost)
     public function diskusi()
     {
         $posts = ForumPost::where('type', 'diskusi')
+            ->with(['user', 'likes', 'comments'])
             ->latest()
             ->get();
 
         return view('forum.index', compact('posts'));
     }
-
 }

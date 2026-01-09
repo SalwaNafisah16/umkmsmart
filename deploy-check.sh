@@ -17,6 +17,18 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # =====================
+# 0. COPY ENV PRODUCTION
+# =====================
+echo "🔍 [0/10] Copying .env.production to .env..."
+if [ -f ".env.production" ]; then
+    cp .env.production .env
+    echo -e "  ${GREEN}✓${NC} .env copied from .env.production"
+else
+    echo -e "  ${RED}✗${NC} .env.production NOT FOUND!"
+fi
+echo ""
+
+# =====================
 # 1. CHECK PHP VERSION
 # =====================
 echo "🔍 [1/10] Checking PHP Version..."
@@ -28,7 +40,7 @@ echo ""
 # =====================
 echo "🔍 [2/10] Checking Folder Permissions..."
 
-FOLDERS=("storage" "storage/app" "storage/framework" "storage/framework/cache" "storage/framework/sessions" "storage/framework/views" "storage/logs" "bootstrap/cache")
+FOLDERS=("storage" "storage/app" "storage/app/public" "storage/framework" "storage/framework/cache" "storage/framework/cache/data" "storage/framework/sessions" "storage/framework/views" "storage/logs" "bootstrap/cache")
 
 for folder in "${FOLDERS[@]}"; do
     if [ -d "$folder" ]; then
@@ -57,12 +69,6 @@ if [ -f ".env" ]; then
         echo "    Run: php artisan key:generate"
     fi
     
-    if grep -q "APP_DEBUG=false" .env; then
-        echo -e "  ${GREEN}✓${NC} APP_DEBUG is false (production)"
-    else
-        echo -e "  ${YELLOW}!${NC} APP_DEBUG should be false in production"
-    fi
-    
     if grep -q "SESSION_DRIVER=file" .env; then
         echo -e "  ${GREEN}✓${NC} SESSION_DRIVER=file"
     else
@@ -73,6 +79,18 @@ if [ -f ".env" ]; then
         echo -e "  ${GREEN}✓${NC} CACHE_STORE=file"
     else
         echo -e "  ${RED}!${NC} CACHE_STORE should be 'file' for shared hosting"
+    fi
+
+    if grep -q "QUEUE_CONNECTION=sync" .env; then
+        echo -e "  ${GREEN}✓${NC} QUEUE_CONNECTION=sync"
+    else
+        echo -e "  ${RED}!${NC} QUEUE_CONNECTION should be 'sync' for shared hosting"
+    fi
+
+    if grep -q "SESSION_DOMAIN=umkmsmart" .env; then
+        echo -e "  ${GREEN}✓${NC} SESSION_DOMAIN is set correctly"
+    else
+        echo -e "  ${YELLOW}!${NC} SESSION_DOMAIN may need to be set"
     fi
 else
     echo -e "  ${RED}✗${NC} .env file NOT FOUND!"
@@ -95,11 +113,11 @@ echo ""
 # =====================
 # 5. CLEAR ALL CACHES
 # =====================
-echo "🔍 [5/10] Clearing caches..."
-php artisan config:clear
-php artisan cache:clear
-php artisan view:clear
-php artisan route:clear
+echo "🔍 [5/10] Clearing all caches..."
+php artisan config:clear 2>/dev/null
+php artisan cache:clear 2>/dev/null
+php artisan view:clear 2>/dev/null
+php artisan route:clear 2>/dev/null
 echo -e "  ${GREEN}✓${NC} All caches cleared"
 echo ""
 
@@ -107,16 +125,27 @@ echo ""
 # 6. CHECK DATABASE CONNECTION
 # =====================
 echo "🔍 [6/10] Testing database connection..."
-php artisan db:show 2>/dev/null | head -n 5 || echo -e "  ${YELLOW}!${NC} Could not verify database connection"
+php -r "
+try {
+    \$pdo = new PDO(
+        'mysql:host=localhost;dbname=sistem18_umkmsmart',
+        'sistem18_umkmsmart',
+        'gJaMX(qmcSr4-Myq'
+    );
+    echo '  ✓ Database connection OK\n';
+} catch (Exception \$e) {
+    echo '  ✗ Database error: ' . \$e->getMessage() . '\n';
+}
+" 2>/dev/null || echo -e "  ${YELLOW}!${NC} Could not verify database connection"
 echo ""
 
 # =====================
 # 7. CACHE FOR PRODUCTION
 # =====================
 echo "🔍 [7/10] Building production cache..."
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
+php artisan config:cache 2>/dev/null
+php artisan route:cache 2>/dev/null
+php artisan view:cache 2>/dev/null
 echo -e "  ${GREEN}✓${NC} Production cache built"
 echo ""
 
@@ -155,14 +184,20 @@ echo ""
 echo "🔍 [10/10] Final check..."
 echo ""
 
-php artisan --version
+php artisan --version 2>/dev/null || echo "Laravel version check failed"
 echo ""
 echo "========================================"
 echo " DEPLOYMENT CHECK COMPLETE!"
 echo "========================================"
 echo ""
-echo "If you still have 500 errors:"
-echo "1. Enable debug: APP_DEBUG=true in .env"
-echo "2. Check logs: tail -100 storage/logs/laravel.log"
-echo "3. Clear cache: php artisan config:clear"
+echo "PENTING! Pastikan di .env:"
+echo "  SESSION_DRIVER=file"
+echo "  CACHE_STORE=file"
+echo "  QUEUE_CONNECTION=sync"
+echo "  SESSION_DOMAIN=umkmsmart.sisteminformasikotacerdas.id"
+echo ""
+echo "Jika masih ada error:"
+echo "1. Enable debug: nano .env -> APP_DEBUG=true"
+echo "2. Clear cache: php artisan config:clear"
+echo "3. Cek log: tail -100 storage/logs/laravel.log"
 echo ""

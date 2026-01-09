@@ -17,6 +17,12 @@ class CommentController extends Controller
      */
     public function store(Request $request)
     {
+        // Pastikan user terautentikasi
+        if (!Auth::check()) {
+            return redirect()->route('login')
+                ->with('error', 'Silakan login terlebih dahulu');
+        }
+
         $user = Auth::user();
 
         // ================= VALIDASI =================
@@ -61,17 +67,19 @@ class CommentController extends Controller
     }
 
     public function umkmIndex()
-{
-    $comments = Comment::with(['user','forumPost','replies.user'])
-    ->whereHas('forumPost', function ($q) {
-        $q->where('user_id', auth()->id());
-    })
-    ->whereNull('parent_id')
-    ->latest()
-    ->get();
+    {
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
 
-    return view('dashboard.umkm.comments', compact('comments'));
-}
+        $comments = Comment::with(['user', 'forumPost', 'replies.user'])
+            ->whereHas('forumPost', function ($q) {
+                $q->where('user_id', Auth::id());
+            })
+            ->whereNull('parent_id')
+            ->latest()
+            ->get();
 
-
+        return view('dashboard.umkm.comments', compact('comments'));
+    }
 }

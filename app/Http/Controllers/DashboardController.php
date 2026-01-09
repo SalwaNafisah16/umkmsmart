@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ForumPost;
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
@@ -13,6 +14,10 @@ class DashboardController extends Controller
      */
     public function mahasiswa()
     {
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
+
         $posts = ForumPost::with([
             'user',
             'likes',
@@ -31,12 +36,16 @@ class DashboardController extends Controller
      */
     public function umkm()
     {
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
+
         $posts = ForumPost::with(['likes', 'comments'])
-            ->where('user_id', auth()->id())
+            ->where('user_id', Auth::id())
             ->latest()
             ->get();
 
-        $products = Product::where('user_id', auth()->id())
+        $products = Product::where('user_id', Auth::id())
             ->latest()
             ->get();
 

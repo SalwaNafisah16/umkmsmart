@@ -18,29 +18,32 @@ class ProfileController extends Controller
      * TAMPILKAN PROFIL SESUAI ROLE
      * ==============================
      */
-   public function index()
-{
-    $user = auth()->user();
+    public function index()
+    {
+        if (!Auth::check()) {
+            return redirect()->route('login')
+                ->with('error', 'Silakan login terlebih dahulu');
+        }
 
-    if ($user->role === 'umkm') {
-        $profile = UmkmProfile::where('user_id', $user->id)->first();
+        $user = Auth::user();
 
-        return view('dashboard.umkm.profile', [
-            'user' => $user,
-            'profile' => $profile
-        ]);
+        if ($user->role === 'umkm') {
+            $profile = UmkmProfile::where('user_id', $user->id)->first();
+
+            return view('dashboard.umkm.profile', [
+                'user' => $user,
+                'profile' => $profile
+            ]);
+        }
+
+        if ($user->role === 'mahasiswa') {
+            return view('dashboard.mahasiswa.profile', [
+                'user' => $user
+            ]);
+        }
+
+        abort(403);
     }
-
-    if ($user->role === 'mahasiswa') {
-        return view('dashboard.mahasiswa.profile', [
-            'user' => $user
-        ]);
-    }
-
-    abort(403);
-}
-
-
 
     /**
      * ==============================
@@ -49,8 +52,18 @@ class ProfileController extends Controller
      */
     public function update(Request $request)
     {
+        if (!Auth::check()) {
+            return redirect()->route('login')
+                ->with('error', 'Silakan login terlebih dahulu');
+        }
+
         try {
-            $user = User::find(auth()->id());
+            $user = User::find(Auth::id());
+
+            if (!$user) {
+                return redirect()->route('login')
+                    ->with('error', 'User tidak ditemukan');
+            }
 
             // ===== UPDATE PROFIL MAHASISWA =====
             if ($user->role === 'mahasiswa') {
