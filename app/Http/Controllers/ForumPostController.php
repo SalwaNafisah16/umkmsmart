@@ -24,31 +24,39 @@ class ForumPostController extends Controller
             'image'      => 'nullable|image|max:2048',
         ]);
 
-        $post = new ForumPost();
-        $post->user_id = $user->id;
-        $post->title   = $user->role === 'umkm'
-            ? 'Postingan UMKM'
-            : 'Postingan Mahasiswa';
+        try {
+            $post = new ForumPost();
+            $post->user_id = $user->id;
+            $post->title   = $user->role === 'umkm'
+                ? 'Postingan UMKM'
+                : 'Postingan Mahasiswa';
 
-        $post->content = $request->content;
+            $post->content = $request->content;
 
-        // 🔐 SESUAI ENUM: diskusi, promosi, event
-        $post->type = $user->role === 'umkm'
-            ? 'promosi'
-            : 'diskusi';
+            // 🔐 SESUAI ENUM: diskusi, promosi, event
+            $post->type = $user->role === 'umkm'
+                ? 'promosi'
+                : 'diskusi';
 
-        if ($request->filled('product_id')) {
-            $post->product_id = $request->product_id;
+            if ($request->filled('product_id')) {
+                $post->product_id = $request->product_id;
+            }
+
+            if ($request->hasFile('image')) {
+                $post->image = $request->file('image')
+                    ->store('forum_posts', 'public');
+            }
+
+            $post->save();
+
+            return back()->with('success', 'Postingan berhasil dibuat');
+            
+        } catch (\Exception $e) {
+            \Log::error('ForumPostController@store error: ' . $e->getMessage());
+            return back()
+                ->withInput()
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
-
-        if ($request->hasFile('image')) {
-            $post->image = $request->file('image')
-                ->store('forum_posts', 'public');
-        }
-
-        $post->save();
-
-        return back()->with('success', 'Postingan berhasil dibuat');
     }
 
     /**
@@ -60,13 +68,19 @@ class ForumPostController extends Controller
     {
         abort_if(Auth::id() !== $forumPost->user_id, 403);
 
-        if ($forumPost->image) {
-            Storage::disk('public')->delete($forumPost->image);
+        try {
+            if ($forumPost->image) {
+                Storage::disk('public')->delete($forumPost->image);
+            }
+
+            $forumPost->delete();
+
+            return back()->with('success', 'Postingan berhasil dihapus');
+            
+        } catch (\Exception $e) {
+            \Log::error('ForumPostController@destroy error: ' . $e->getMessage());
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
-
-        $forumPost->delete();
-
-        return back()->with('success', 'Postingan berhasil dihapus');
     }
 
     /**
@@ -110,12 +124,20 @@ class ForumPostController extends Controller
             'content' => 'required|string|max:5000',
         ]);
 
-        $forumPost->update([
-            'content' => $request->content,
-        ]);
+        try {
+            $forumPost->update([
+                'content' => $request->content,
+            ]);
 
-        return redirect()
-            ->route('forum.show', $forumPost->id)
-            ->with('success', 'Postingan berhasil diperbarui');
+            return redirect()
+                ->route('forum.show', $forumPost->id)
+                ->with('success', 'Postingan berhasil diperbarui');
+                
+        } catch (\Exception $e) {
+            \Log::error('ForumPostController@update error: ' . $e->getMessage());
+            return back()
+                ->withInput()
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
     }
 }

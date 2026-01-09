@@ -49,43 +49,51 @@ class ProfileController extends Controller
      */
     public function update(Request $request)
     {
-        $user = User::find(auth()->id());
+        try {
+            $user = User::find(auth()->id());
 
-        // ===== UPDATE PROFIL MAHASISWA =====
-        if ($user->role === 'mahasiswa') {
-            $user->name = $request->name;
-            $user->email = $request->email;
-            $user->save();
+            // ===== UPDATE PROFIL MAHASISWA =====
+            if ($user->role === 'mahasiswa') {
+                $user->name = $request->name;
+                $user->email = $request->email;
+                $user->save();
 
-            MahasiswaProfile::updateOrCreate(
-                ['user_id' => $user->id],
-                ['prodi' => $request->prodi]
-            );
+                MahasiswaProfile::updateOrCreate(
+                    ['user_id' => $user->id],
+                    ['prodi' => $request->prodi]
+                );
 
-            return redirect()->route('mahasiswa.profile')
-                ->with('success', 'Profil berhasil diperbarui');
+                return redirect()->route('mahasiswa.profile')
+                    ->with('success', 'Profil berhasil diperbarui');
+            }
+
+
+            // ===== UPDATE PROFIL UMKM =====
+            if ($user->role === 'umkm') {
+                UmkmProfile::updateOrCreate(
+                    ['user_id' => $user->id],
+                    [
+                        'nama_usaha'   => $request->nama_usaha,
+                        'jenis_usaha'  => $request->jenis_usaha,
+                        'alamat_usaha' => $request->alamat_usaha,
+                        'no_hp_usaha'  => $request->no_hp_usaha,
+                        'deskripsi'    => $request->deskripsi,
+                        'status_usaha' => 'aktif'
+                    ]
+                );
+
+                return redirect()->route('umkm.profil.index')
+                    ->with('success', 'Profil berhasil diperbarui');
+            }
+
+            return back()->with('error', 'Role tidak dikenal');
+            
+        } catch (\Exception $e) {
+            \Log::error('ProfileController@update error: ' . $e->getMessage());
+            return back()
+                ->withInput()
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
-
-
-        // ===== UPDATE PROFIL UMKM =====
-        if ($user->role === 'umkm') {
-            UmkmProfile::updateOrCreate(
-                ['user_id' => $user->id],
-                [
-                    'nama_usaha'   => $request->nama_usaha,
-                    'jenis_usaha'  => $request->jenis_usaha,
-                    'alamat_usaha' => $request->alamat_usaha,
-                    'no_hp_usaha'  => $request->no_hp_usaha,
-                    'deskripsi'    => $request->deskripsi,
-                    'status_usaha' => 'aktif'
-                ]
-            );
-
-            return redirect()->route('umkm.profil.index')
-                ->with('success', 'Profil berhasil diperbarui');
-        }
-
-        return back()->with('error', 'Role tidak dikenal');
     }
 
     /**

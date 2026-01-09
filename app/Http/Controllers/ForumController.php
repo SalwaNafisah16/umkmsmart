@@ -31,14 +31,22 @@ public function show(\App\Models\ForumPost $forumPost)
             'content' => 'required|string',
         ]);
 
-        ForumPost::create([
-            'user_id' => Auth::id(),
-            'title'   => 'Diskusi Mahasiswa',
-            'content' => $request->input('content'),
-            'type'    => 'diskusi',
-        ]);
+        try {
+            ForumPost::create([
+                'user_id' => Auth::id(),
+                'title'   => 'Diskusi Mahasiswa',
+                'content' => $request->input('content'),
+                'type'    => 'diskusi',
+            ]);
 
-        return back()->with('success', 'Postingan berhasil dibuat');
+            return back()->with('success', 'Postingan berhasil dibuat');
+            
+        } catch (\Exception $e) {
+            \Log::error('ForumController@storeMahasiswa error: ' . $e->getMessage());
+            return back()
+                ->withInput()
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -52,20 +60,28 @@ public function show(\App\Models\ForumPost $forumPost)
             'image'   => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
-        $imagePath = null;
-        if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('forum', 'public');
+        try {
+            $imagePath = null;
+            if ($request->hasFile('image')) {
+                $imagePath = $request->file('image')->store('forum', 'public');
+            }
+
+            ForumPost::create([
+                'user_id' => Auth::id(),
+                'title'   => $request->input('title'),
+                'content' => $request->input('content'),
+                'image'   => $imagePath,
+                'type'    => 'promosi',
+            ]);
+
+            return back()->with('success', 'Postingan UMKM berhasil dibuat');
+            
+        } catch (\Exception $e) {
+            \Log::error('ForumController@storeUmkm error: ' . $e->getMessage());
+            return back()
+                ->withInput()
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
-
-        ForumPost::create([
-            'user_id' => Auth::id(),
-            'title'   => $request->input('title'),
-            'content' => $request->input('content'),
-            'image'   => $imagePath,
-            'type'    => 'promosi',
-        ]);
-
-        return back()->with('success', 'Postingan UMKM berhasil dibuat');
     }
     public function index()
     {

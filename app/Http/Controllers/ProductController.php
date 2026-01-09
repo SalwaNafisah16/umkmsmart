@@ -43,36 +43,46 @@ class ProductController extends Controller
             'gambar'      => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
-        // ================= SIMPAN PRODUK =================
-        $data = $request->all();
-        $data['user_id'] = Auth::id();
-        $data['status']  = 'aktif';
+        try {
+            // ================= SIMPAN PRODUK =================
+            $data = $request->all();
+            $data['user_id'] = Auth::id();
+            $data['status']  = 'aktif';
 
-        if ($request->hasFile('gambar')) {
-            $data['gambar'] = $request->file('gambar')
-                ->store('products', 'public');
+            if ($request->hasFile('gambar')) {
+                $data['gambar'] = $request->file('gambar')
+                    ->store('products', 'public');
+            }
+
+            $product = Product::create($data);
+
+            // ================= AUTO BUAT POST FORUM =================
+            ForumPost::create([
+                'user_id'    => Auth::id(),
+                'product_id' => $product->id,
+                'title'      => $product->nama_produk,
+                'content'    =>
+                    "📢 *Produk Baru UMKM*\n\n" .
+                    $product->nama_produk . "\n" .
+                    "Harga: Rp " . number_format($product->harga, 0, ',', '.') . "\n" .
+                    "Stok: " . $product->stok . "\n\n" .
+                    $product->deskripsi,
+                'image'    => $product->gambar ?? null,
+                'type'     => 'promosi',
+                'category' => 'produk',
+            ]);
+
+            return redirect()
+                ->route('umkm.products.index')
+                ->with('success', 'Produk berhasil ditambahkan & diposting ke forum');
+                
+        } catch (\Exception $e) {
+            \Log::error('ProductController@store error: ' . $e->getMessage());
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
-
-        $product = Product::create($data);
-
-        // ================= AUTO BUAT POST FORUM =================
-        ForumPost::create([
-            'user_id'  => Auth::id(),
-            'title'    => $product->nama_produk,
-            'content'  =>
-                "📢 *Produk Baru UMKM*\n\n" .
-                $product->nama_produk . "\n" .
-                "Harga: Rp " . number_format($product->harga, 0, ',', '.') . "\n" .
-                "Stok: " . $product->stok . "\n\n" .
-                $product->deskripsi,
-            'image'    => $product->gambar ?? null,
-            'type'     => 'promosi',   // ✅ FIX
-            'category' => 'produk',    // ✅ FIX
-        ]);
-
-        return redirect()
-            ->route('umkm.products.index')
-            ->with('success', 'Produk berhasil ditambahkan & diposting ke forum');
     }
 
     /**
@@ -100,22 +110,31 @@ class ProductController extends Controller
             'gambar'      => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
-        $data = $request->all();
+        try {
+            $data = $request->all();
 
-        if ($request->hasFile('gambar')) {
-            if ($product->gambar) {
-                Storage::disk('public')->delete($product->gambar);
+            if ($request->hasFile('gambar')) {
+                if ($product->gambar) {
+                    Storage::disk('public')->delete($product->gambar);
+                }
+
+                $data['gambar'] = $request->file('gambar')
+                    ->store('products', 'public');
             }
 
-            $data['gambar'] = $request->file('gambar')
-                ->store('products', 'public');
+            $product->update($data);
+
+            return redirect()
+                ->route('umkm.products.index')
+                ->with('success', 'Produk berhasil diperbarui');
+                
+        } catch (\Exception $e) {
+            \Log::error('ProductController@update error: ' . $e->getMessage());
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
-
-        $product->update($data);
-
-        return redirect()
-            ->route('umkm.products.index')
-            ->with('success', 'Produk berhasil diperbarui');
     }
 
     /**
@@ -125,14 +144,22 @@ class ProductController extends Controller
     {
         abort_if($product->user_id !== Auth::id(), 403);
 
-        if ($product->gambar) {
-            Storage::disk('public')->delete($product->gambar);
+        try {
+            if ($product->gambar) {
+                Storage::disk('public')->delete($product->gambar);
+            }
+
+            $product->delete();
+
+            return redirect()
+                ->route('umkm.products.index')
+                ->with('success', 'Produk berhasil dihapus');
+                
+        } catch (\Exception $e) {
+            \Log::error('ProductController@destroy error: ' . $e->getMessage());
+            return redirect()
+                ->back()
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
-
-        $product->delete();
-
-        return redirect()
-            ->route('umkm.products.index')
-            ->with('success', 'Produk berhasil dihapus');
     }
 }

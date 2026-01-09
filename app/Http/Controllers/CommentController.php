@@ -37,19 +37,27 @@ class CommentController extends Controller
 
         $validated = $request->validate($rules);
 
-        // ================= SIMPAN =================
-        Comment::create([
-            'forum_post_id' => $validated['forum_post_id'],
-            'user_id'       => $user->id,
-            'content'       => $validated['content'],
-            // Mahasiswa DIPAKSA null walaupun inject request
-            'parent_id'     => $user->role === 'umkm'
-                                ? ($validated['parent_id'] ?? null)
-                                : null,
-        ]);
+        try {
+            // ================= SIMPAN =================
+            Comment::create([
+                'forum_post_id' => $validated['forum_post_id'],
+                'user_id'       => $user->id,
+                'content'       => $validated['content'],
+                // Mahasiswa DIPAKSA null walaupun inject request
+                'parent_id'     => $user->role === 'umkm'
+                                    ? ($validated['parent_id'] ?? null)
+                                    : null,
+            ]);
 
-        // ================= REDIRECT =================
-        return back()->with('success', 'Komentar berhasil dikirim');
+            // ================= REDIRECT =================
+            return back()->with('success', 'Komentar berhasil dikirim');
+            
+        } catch (\Exception $e) {
+            \Log::error('CommentController@store error: ' . $e->getMessage());
+            return back()
+                ->withInput()
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
     }
 
     public function umkmIndex()
