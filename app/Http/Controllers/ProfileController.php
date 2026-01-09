@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\MahasiswaProfile;
 use App\Models\UmkmProfile;
+use App\Models\User;
 use App\Http\Requests\ProfileUpdateRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -30,6 +31,12 @@ class ProfileController extends Controller
         ]);
     }
 
+    if ($user->role === 'mahasiswa') {
+        return view('dashboard.mahasiswa.profile', [
+            'user' => $user
+        ]);
+    }
+
     abort(403);
 }
 
@@ -42,20 +49,22 @@ class ProfileController extends Controller
      */
     public function update(Request $request)
     {
-        $user = auth()->user();
+        $user = User::find(auth()->id());
 
         // ===== UPDATE PROFIL MAHASISWA =====
         if ($user->role === 'mahasiswa') {
-    $user->update([
-        'name'  => $request->name,
-        'email' => $request->email,
-    ]);
+            $user->name = $request->name;
+            $user->email = $request->email;
+            $user->save();
 
-    MahasiswaProfile::updateOrCreate(
-        ['user_id' => $user->id],
-        ['prodi' => $request->prodi]
-    );
-}
+            MahasiswaProfile::updateOrCreate(
+                ['user_id' => $user->id],
+                ['prodi' => $request->prodi]
+            );
+
+            return redirect()->route('mahasiswa.profile')
+                ->with('success', 'Profil berhasil diperbarui');
+        }
 
 
         // ===== UPDATE PROFIL UMKM =====
@@ -71,10 +80,12 @@ class ProfileController extends Controller
                     'status_usaha' => 'aktif'
                 ]
             );
+
+            return redirect()->route('umkm.profil.index')
+                ->with('success', 'Profil berhasil diperbarui');
         }
 
-        return redirect()->route('profil.index')
-            ->with('success', 'Profil berhasil diperbarui');
+        return back()->with('error', 'Role tidak dikenal');
     }
 
     /**

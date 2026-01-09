@@ -76,16 +76,15 @@
         </div>
 
         {{-- PRODI (OPSIONAL JIKA ADA) --}}
-        @if(auth()->user()->mahasiswaProfile)
         <div>
             <label class="text-sm text-gray-500">Program Studi</label>
             <input type="text"
                    name="prodi"
-                   value="{{ old('prodi', auth()->user()->mahasiswaProfile->prodi) }}"
+                   value="{{ old('prodi', auth()->user()->mahasiswaProfile->prodi ?? '') }}"
                    class="w-full rounded-xl border-gray-300 mt-1
-                          focus:ring-primary">
+                          focus:ring-primary"
+                   placeholder="Masukkan program studi">
         </div>
-        @endif
 
         <div class="pt-4">
             <button type="submit"
