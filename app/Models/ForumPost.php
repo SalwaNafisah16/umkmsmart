@@ -11,11 +11,12 @@ class ForumPost extends Model
 
     protected $fillable = [
         'user_id',
+        'product_id',
         'title',
         'content',
         'image',
         'category',
-        'type', // umkm | mahasiswa
+        'type',
     ];
 
     // 🔗 Relasi ke User (UMKM / Mahasiswa)

@@ -32,10 +32,10 @@ class ForumPostController extends Controller
 
         $post->content = $request->content;
 
-        // 🔐 SESUAI ENUM / DATA LAMA KAMU
+        // 🔐 SESUAI ENUM: diskusi, promosi, event
         $post->type = $user->role === 'umkm'
             ? 'promosi'
-            : 'forum';
+            : 'diskusi';
 
         if ($request->filled('product_id')) {
             $post->product_id = $request->product_id;

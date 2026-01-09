@@ -33,8 +33,9 @@ public function show(\App\Models\ForumPost $forumPost)
 
         ForumPost::create([
             'user_id' => Auth::id(),
+            'title'   => 'Diskusi Mahasiswa',
             'content' => $request->input('content'),
-            'type' => 'mahasiswa',
+            'type'    => 'diskusi',
         ]);
 
         return back()->with('success', 'Postingan berhasil dibuat');
@@ -61,7 +62,7 @@ public function show(\App\Models\ForumPost $forumPost)
             'title'   => $request->input('title'),
             'content' => $request->input('content'),
             'image'   => $imagePath,
-            'type'    => 'umkm',
+            'type'    => 'promosi',
         ]);
 
         return back()->with('success', 'Postingan UMKM berhasil dibuat');
