@@ -118,10 +118,10 @@ class ProductController extends Controller
 
         $data = [
             'user_id'     => $user->id,
-            'nama_produk' => $request->nama,
-            'deskripsi'   => $request->deskripsi,
-            'harga'       => $request->harga,
-            'stok'        => $request->stok ?? 0,
+            'nama_produk' => $request->input('nama'),
+            'deskripsi'   => $request->input('deskripsi'),
+            'harga'       => $request->input('harga'),
+            'stok'        => $request->input('stok', 0),
             'status'      => 'aktif',
         ];
 
@@ -199,10 +199,10 @@ class ProductController extends Controller
         }
 
         $product->update([
-            'nama_produk' => $request->nama,
-            'deskripsi'   => $request->deskripsi,
-            'harga'       => $request->harga,
-            'stok'        => $request->stok ?? $product->stok,
+            'nama_produk' => $request->input('nama'),
+            'deskripsi'   => $request->input('deskripsi'),
+            'harga'       => $request->input('harga'),
+            'stok'        => $request->input('stok', $product->stok),
         ]);
 
         if ($product->gambar) {

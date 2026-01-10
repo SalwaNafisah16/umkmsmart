@@ -121,13 +121,13 @@ class ForumPostController extends Controller
         }
 
         // Ambil content dari body atau content field
-        $content = $request->body ?? $request->content ?? '';
+        $content = $request->input('body') ?? $request->input('content') ?? '';
 
         $post = new ForumPost();
         $post->user_id = $user->id;
-        $post->title   = $request->title ?? ($user->role === 'umkm' ? 'Postingan UMKM' : 'Postingan Mahasiswa');
+        $post->title   = $request->input('title') ?? ($user->role === 'umkm' ? 'Postingan UMKM' : 'Postingan Mahasiswa');
         $post->content = $content;
-        $post->type    = $user->role === 'umkm' ? 'promosi' : 'forum';
+        $post->type    = $user->role === 'umkm' ? 'promosi' : 'diskusi';
 
         if ($request->hasFile('image')) {
             $post->image = $request->file('image')->store('forum_posts', 'public');
@@ -187,7 +187,7 @@ class ForumPostController extends Controller
         }
 
         $post->update([
-            'content' => $request->content,
+            'content' => $request->input('content'),
         ]);
 
         $post->load(['user', 'likes', 'comments', 'saves']);

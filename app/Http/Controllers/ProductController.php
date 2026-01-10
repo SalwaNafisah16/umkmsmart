@@ -194,13 +194,4 @@ class ProductController extends Controller
         }
     }
 }
-                ->with('success', 'Produk berhasil dihapus');
-                
-        } catch (\Exception $e) {
-            \Log::error('ProductController@destroy error: ' . $e->getMessage());
-            return redirect()
-                ->back()
-                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
-        }
-    }
-}
+

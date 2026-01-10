@@ -37,7 +37,7 @@ class ForumPostController extends Controller
                 ? 'Postingan UMKM'
                 : 'Postingan Mahasiswa';
 
-            $post->content = $request->content;
+            $post->content = $request->input('content');
 
             // 🔐 SESUAI ENUM: diskusi, promosi, event
             $post->type = $user->role === 'umkm'
@@ -45,7 +45,7 @@ class ForumPostController extends Controller
                 : 'diskusi';
 
             if ($request->filled('product_id')) {
-                $post->product_id = $request->product_id;
+                $post->product_id = $request->input('product_id');
             }
 
             if ($request->hasFile('image')) {
@@ -154,7 +154,7 @@ class ForumPostController extends Controller
 
         try {
             $forumPost->update([
-                'content' => $request->content,
+                'content' => $request->input('content'),
             ]);
 
             return redirect()
@@ -166,9 +166,6 @@ class ForumPostController extends Controller
             return back()
                 ->withInput()
                 ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
-        }
-    }
-}
         }
     }
 }

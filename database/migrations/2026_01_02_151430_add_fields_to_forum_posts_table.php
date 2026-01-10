@@ -10,7 +10,7 @@ return new class extends Migration {
         Schema::table('forum_posts', function (Blueprint $table) {
             $table->string('image')->nullable()->after('content');
             $table->string('category')->nullable()->after('image');
-            $table->enum('type', ['umkm', 'mahasiswa'])->after('category');
+            $table->enum('type', ['diskusi', 'promosi', 'event'])->after('category');
         });
     }
 
